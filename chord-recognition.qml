@@ -234,6 +234,15 @@ MuseScore {
 //       return "[" + base.map(function(x){ return noteName[x];}) + "]";
     }
 
+    function hasAnyMoreElement(cursors) {
+        for(var i = 0; i < cursors.length; i++) {
+           if(cursors[i].element) {
+               return true;
+           }
+        }
+        return false;
+    }
+
     menuPath: "Plugins.chord recognition"
     onRun: {
  
@@ -241,7 +250,10 @@ MuseScore {
             console.log("Please open a score before calling execution this plugin.");
             Qt.quit();
         }
-        console.log("=======");
+        console.log("=====" + curScore);
+        for(var i = 0; i < scores.length; i++) {
+            console.log(scores[i]);
+        }
 
         var tickHeap = [];
         var cursors = [];
@@ -254,9 +266,8 @@ MuseScore {
             tickHeap.push(0);
         }
 
-        for(var j = 0; j < 100; j++) {
-            console.log("---- " + j);
-
+        var cc = 0;
+        while(hasAnyMoreElement(cursors) && cc < 10000) {
             var minTicks = currentTicks + 1000000;
 
             var pitches = [];
@@ -278,7 +289,6 @@ MuseScore {
                        if(tickHeap[t] + cTicks < minTicks) {
                            minTicks = tickHeap[t] + cTicks;
                        } 
-//                       console.log("Global Duration: " + fw(cursors[t].element.globalDuration));
                    }
                 }
             }     
@@ -286,18 +296,20 @@ MuseScore {
             var ch = getChord(pitches);
             console.log("Chord: " + ch);
 
+            var textAdded = false;
             for(var t = 0; t < curScore.ntracks; t++) {
                if(cursors[t].element && cursors[t].element.duration) {
                    var cTicks = cursors[t].element.duration.ticks;
                    if(tickHeap[t] + cTicks <= minTicks) {
                       tickHeap[t] += cTicks;
 
-                      if(ch) {
-                          var text = newElement(Element.STAFF_TEXT);  
+                      if(ch && !textAdded) {
+                          var text = newElement(Element.TEXT);  
                           text.pos.x = 0;
-                          text.pos.y = 0;
+                          text.pos.y = -2;
                           text.text = ch;
                           cursors[t].add(text);
+                          textAdded = true;
 
                        }
                        cursors[t].next();
@@ -308,45 +320,9 @@ MuseScore {
             currentTicks = minTicks;
  
             console.log("----" + currentTicks);
-        }
-/*
-        var cc = 0;
-
-        while(cc<20) {
-            console.log(cursor.segment ? Object.keys(cursor.segment) : "null");
-            if(cursor.segment) {
-                  console.log(curScore.ntracks);
-                  console.log(cursor.element.type);
-
-
-                  var segnotes = [];
-
-                  for(var track = 0; track < curScore.ntracks; track++) {            
-                      cursor.voice = track % 4;
-                      cursor.staffIdx = Math.floor(track / 4);
-                      var element = cursor.element;
-                      if(element && element.type == Element.CHORD) {
-                          var notes = element.notes;
-                          for(var i = 0; i < notes.length; i++) {
-                              segnotes.push(notes[i].pitch);
-                          }
-                      }
-                  }
-                  var ch = getChord(segnotes);
-                  if(ch && false) {
-                      var text = newElement(Element.STAFF_TEXT);
-                      text.pos.x = 0;
-                      text.pos.y = 0;
-                      text.text = ch;
-//                      cursor.track = 0;
-//                      cursor.add(text);
-                  }
-            }
-
-            cursor.next();
-//            console.log(cursor.segment ? cursor.segment : "null");
             cc++;
-        }*/
+        }
+
 
         Qt.quit();
     }

@@ -1,0 +1,6 @@
+## Global Variables
+scores:array of Ms::Score - list of opened scores
+curScore:Ms::Score - curent score
+
+
+
